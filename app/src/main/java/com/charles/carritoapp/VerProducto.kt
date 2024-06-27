@@ -1,5 +1,6 @@
 package com.charles.carritoapp
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.database.Cursor
@@ -20,6 +21,9 @@ import com.charles.carritoapp.configs.Conexion
 import com.charles.carritoapp.configs.Config
 import com.charles.carritoapp.modelos.Producto
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 class VerProducto : AppCompatActivity() {
@@ -46,7 +50,7 @@ class VerProducto : AppCompatActivity() {
         supportActionBar?.setDisplayShowHomeEnabled(true)
         var  id:String = intent.getStringExtra("Id")
         var  bandera:String = intent.getStringExtra("bandera")
-       // idCliente= intent.getStringExtra("idCliente")
+        // idCliente= intent.getStringExtra("idCliente")
 
 
 
@@ -65,39 +69,63 @@ class VerProducto : AppCompatActivity() {
             startActivity(intent)
         }
 
-       recargar(this,id,bandera)
+        recargar(this,id,bandera)
 
         var conexion = Conexion(this)
         var  db = conexion.writableDatabase
         btnComprar.setOnClickListener {
+            val cantidad = txtCantidad.text.toString().toInt()
 
+            if (cantidad > 0 && cantidad <= producto.stock.toInt()) {
+                val db = conexion.writableDatabase
+                val fechaActual = obtenerFechaActual() // Obtener la fecha actual en el formato deseado
 
-            if (txtCantidad.text.toString().toInt() <= producto.stock.toInt() && txtCantidad.text.toString().toInt() >0){
-                val SELECT = "SELECT * FROM carrito WHERE id_producto="+producto.id
-                val cursor: Cursor = db.rawQuery(SELECT, null)
-                if (cursor.moveToFirst()){
-                    db.execSQL("UPDATE carrito SET cantidad="+txtCantidad.text.toString()+" WHERE id_producto="+producto.id)
-                }else{
-                    db.execSQL("Insert into carrito (id_producto,cantidad,id_Factura) values ("+producto.id+","+txtCantidad.text.toString()+",1)")
-
+                val values = ContentValues().apply {
+                    put("id_producto", producto.id.toInt())
+                    put("cantidad", cantidad)
+                    put("id_Factura", 1) // Suponiendo que 1 es el ID de la factura para esta compra
+                    put("fecha", fechaActual)
                 }
-                var intent = Intent(this,Carrito::class.java)
+
+                // Determinar la acción (insertar o actualizar)
+                val cursor = db.rawQuery("SELECT * FROM carrito WHERE id_producto = ?", arrayOf(producto.id))
+                if (cursor.moveToFirst()) {
+                    // Actualizar registro existente
+                    values.put("accion", "update")
+                    db.update("carrito", values, "id_producto = ?", arrayOf(producto.id))
+                } else {
+                    // Insertar nuevo registro
+                    values.put("accion", "insert")
+                    db.insert("carrito", null, values)
+                }
+
+                // Registrar en el reporte
+                db.insert("reporte", null, values)
+
+                cursor.close()
+                db.close()
+
+                // Redirigir a la actividad del carrito con el ID del cliente
+                val intent = Intent(this, Carrito::class.java)
                 intent.putExtra("idCliente", "1")
                 startActivity(intent)
-            }else{
-                val builder = AlertDialog.Builder(this)
-                builder.setTitle("Error Compra")
-                builder.setMessage("Su compra es mayor al Stock disponible o menor que cero ")
-                builder.setPositiveButton("Aceptar") { dialog, which ->
-
-                }
-
-                builder.show()
+            } else {
+                // Mostrar mensaje de error si la cantidad es inválida
+                AlertDialog.Builder(this)
+                    .setTitle("Error en la compra")
+                    .setMessage("La cantidad seleccionada no está disponible en stock.")
+                    .setPositiveButton("Aceptar", null)
+                    .show()
             }
-
-
         }
 
+
+
+    }
+
+    fun obtenerFechaActual(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        return sdf.format(Date())
     }
 
 
@@ -157,8 +185,8 @@ class VerProducto : AppCompatActivity() {
     }
 
     fun btnMas (view:View){
-       txtCantidad.setText((txtCantidad.text.toString().toInt() + 1 ).toString())
-       // Toast.makeText(this,"mas" , Toast.LENGTH_SHORT).show()
+        txtCantidad.setText((txtCantidad.text.toString().toInt() + 1 ).toString())
+        // Toast.makeText(this,"mas" , Toast.LENGTH_SHORT).show()
 
     }
 

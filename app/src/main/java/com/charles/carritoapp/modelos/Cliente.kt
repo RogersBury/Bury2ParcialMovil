@@ -1,11 +1,4 @@
 package com.charles.carritoapp.modelos
 
-data class Cliente(
-    val idCliente: Int,
-    val cedulaCli: String,
-    val nombreCli: String,
-    val apellidoCli: String,
-    val direccionCli: String,
-    val contrasenia: String,
-    val imagenUrl: String // Nuevo campo para la URL de la imagen
-)
+data class Cliente(val idCliente:Int,val cedulaCli:String,val nombreCli:String,val apellidoCli:String,val direccionCli:String,val contrasenia:String) {
+}

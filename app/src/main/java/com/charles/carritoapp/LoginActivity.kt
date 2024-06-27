@@ -42,39 +42,17 @@ class LoginActivity : AppCompatActivity() {
         cedula = editTextUsuario.text.toString()
         clave = editTextClave.text.toString()
 
+        if (cedula.isBlank() || clave.isBlank()) {
+            Toast.makeText(this, "Por favor, completa todos los campos", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         val config = Config()
-        val url = config.ipServidor + "Cliente"
+        val url = "${config.ipServidor}Cliente"
         val jsonObjectRequest = JsonObjectRequest(
             Request.Method.GET, url, null,
             Response.Listener { respuesta: JSONObject ->
-                var bandera = false
-                val datos = respuesta.getJSONArray("data")
-                for (i in 0 until datos.length()) {
-                    val item = datos.getJSONObject(i)
-                    Log.i("Cliente", item.getString("contrasenia"))
-                    if (cedula == item.getString("cedulaCli").toString() && clave == item.getString("contrasenia").toString()) {
-                        bandera = true
-                        idCliente = item.getString("idCliente").toString()
-                    }
-                }
-                val conexion = ConexionCliente(this)
-                val db = conexion.writableDatabase
-
-                if (bandera) {
-                    failedAttempts = 0 // Reiniciar el contador de intentos fallidos
-                    db.execSQL("INSERT INTO usuario (id_usuario) VALUES ($idCliente)")
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.putExtra("idCliente", "1")
-                    startActivity(intent)
-                } else {
-                    failedAttempts++
-                    if (failedAttempts >= 3) {
-                        Toast.makeText(this, "Usuario bloqueado por múltiples intentos fallidos", Toast.LENGTH_LONG).show()
-                        // Aquí puedes agregar lógica adicional para manejar el bloqueo del usuario
-                    } else {
-                        Toast.makeText(this, "Usuario o contraseña incorrectos. Intentos fallidos: $failedAttempts", Toast.LENGTH_LONG).show()
-                    }
-                }
+                handleLoginResponse(respuesta)
             },
             Response.ErrorListener {
                 Toast.makeText(this, "Error en la conexión con el servidor", Toast.LENGTH_LONG).show()
@@ -84,4 +62,47 @@ class LoginActivity : AppCompatActivity() {
         val queue = Volley.newRequestQueue(this)
         queue.add(jsonObjectRequest)
     }
+
+    private fun handleLoginResponse(respuesta: JSONObject) {
+        var isAuthenticated = false
+        val datos = respuesta.getJSONArray("data")
+
+        for (i in 0 until datos.length()) {
+            val item = datos.getJSONObject(i)
+            Log.i("Cliente", item.getString("contrasenia"))
+            if (cedula == item.getString("cedulaCli") && clave == item.getString("contrasenia")) {
+                isAuthenticated = true
+                idCliente = item.getString("idCliente")
+                break
+            }
+        }
+
+        if (isAuthenticated) {
+            onLoginSuccess(idCliente)
+        } else {
+          //  onLoginFailed()
+        }
+    }
+
+    private fun onLoginSuccess(idCliente: String) {
+        failedAttempts = 0 // Reiniciar el contador de intentos fallidos
+        val conexion = ConexionCliente(this)
+        val db = conexion.writableDatabase
+        db.execSQL("INSERT INTO usuario (id_usuario) VALUES ($idCliente)")
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("idCliente", idCliente)
+        startActivity(intent)
+    }
+
+//    private fun onLoginFailed() {
+//        failedAttempts++
+//        if (failedAttempts >= 3) {
+//            Toast.makeText(this, "Usuario bloqueado por múltiples intentos fallidos", Toast.LENGTH_LONG).show()
+//           // finishAffinity();
+//            // Aquí puedes agregar lógica adicional para manejar el bloqueo del usuario
+//        } else {
+//            Toast.makeText(this, "Usuario o contraseña incorrectos. Intentos fallidos: $failedAttempts", Toast.LENGTH_LONG).show()
+//        }
+//    }
 }

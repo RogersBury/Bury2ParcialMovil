@@ -1,126 +1,133 @@
 package com.charles.carritoapp
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.android.volley.DefaultRetryPolicy
 import com.android.volley.Request
-import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
+import com.bumptech.glide.Glide
 import com.charles.carritoapp.configs.Config
 import com.charles.carritoapp.databinding.ActivityRegistroClienteBinding
 import org.json.JSONObject
 
-
 class RegistroClienteActivity : AppCompatActivity() {
+    private lateinit var binding: ActivityRegistroClienteBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       // setContentView(R.layout.activity_registro_cliente)
-
-        val binding = ActivityRegistroClienteBinding.inflate(layoutInflater)
+        binding = ActivityRegistroClienteBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-    binding.buttonCliienteRegistrar.setOnClickListener {
-        var cedula = binding.editTextClienteCedula.text.toString()
-        var clave= binding.editTextClienteClave.text.toString()
-        var bandera:Boolean= false
+        binding.buttonLoadImage.setOnClickListener {
+            val imageUrl = binding.editTextImageUrl.text.toString()
+            if (imageUrl.isNotEmpty()) {
+                loadImage(imageUrl)
+            } else {
+                Toast.makeText(this, "Por favor ingrese una URL de imagen", Toast.LENGTH_SHORT).show()
+            }
+        }
 
+        binding.buttonCliienteRegistrar.setOnClickListener {
+            var cedula = binding.editTextClienteCedula.text.toString()
+            var clave = binding.editTextClienteClave.text.toString()
+            var bandera = false
 
-
-        if(validarCampos(binding)) {
-            if(validarCedula(cedula)){
-                if(validarClave(clave)){
-
-                    bandera= true
-                }else{
-                    Toast.makeText(this,"La clave de tener minimo 4 caracteres, " +
-                            "mayuscula, minuscula,numero,y  caracter especial",Toast.LENGTH_LONG).show()
+            if (validarCampos(binding)) {
+                if (validarCedula(cedula)) {
+                    if (validarClave(clave)) {
+                        bandera = true
+                    } else {
+                        Toast.makeText(this, "La clave debe tener mínimo 4 caracteres, " +
+                                "mayúscula, minúscula, número y carácter especial", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    Toast.makeText(this, "Cédula incorrecta", Toast.LENGTH_LONG).show()
                 }
-            }else{
-                Toast.makeText(this,"Cedula incorrecta",Toast.LENGTH_LONG).show()
+            } else {
+                val builder = AlertDialog.Builder(this)
+                builder.setTitle("Campos Incompletos")
+                builder.setMessage("Llene todos los campos")
+                builder.setPositiveButton("Aceptar") { dialog, which -> }
+                builder.show()
             }
 
-        }else{
-
-            val builder = AlertDialog.Builder(this)
-            builder.setTitle("Campos Incompletos")
-            builder.setMessage("LLene todos los campos")
-            builder.setPositiveButton("Aceptar") { dialog, which ->
+            if (bandera) {
+                registrarCliente()
             }
-            builder.show()
         }
-
-
-
-
-        if(bandera){
-            var config = Config()
-            var url = config.ipServidor+ "Cliente"
-
-            val params = HashMap<String,String>()
-            params["cedulaCli"] =  binding.editTextClienteCedula.text.toString()
-            params["nombreCli"] = binding.editTextClienteNombre.text.toString()
-            params["apellidoCli"] = binding.editTextClienteApellido.text.toString()
-            params["direccionCli"] = binding.editTextClienteDireccion.text.toString()
-            params["contrasenia"] = binding.editTextClienteClave.text.toString()
-            val jsonObject = JSONObject(params as Map<*, *>?)
-
-            // Volley post request with parameters
-            val request = JsonObjectRequest(
-                Request.Method.POST,url, jsonObject,
-                Response.Listener {
-                    // Process the json
-                    Toast.makeText(applicationContext, "Cliente Insertado con exito", Toast.LENGTH_LONG).show()
-                    var inte = Intent(this,LoginActivity::class.java)
-                    startActivity(inte)
-
-                }, Response.ErrorListener{
-                    // Error in request
-                    Toast.makeText(applicationContext, "No se Inserto con exito", Toast.LENGTH_LONG).show()
-
-                })
-
-            request.retryPolicy = DefaultRetryPolicy(
-                DefaultRetryPolicy.DEFAULT_TIMEOUT_MS,
-                // 0 means no retry
-                0, // DefaultRetryPolicy.DEFAULT_MAX_RETRIES = 2
-                1f // DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
-            )
-
-            val queue = Volley.newRequestQueue(this)
-            queue.add(request)
-
-        }
-
-
     }
 
+    private fun loadImage(url: String) {
+        Glide.with(this)
+            .load(url)
 
+            .into(binding.imageViewUser)
+    }
+
+    private fun registrarCliente() {
+        val config = Config()
+        val url = config.ipServidor + "Cliente"
+
+        val params = HashMap<String, String>()
+        params["cedulaCli"] = binding.editTextClienteCedula.text.toString()
+        params["nombreCli"] = binding.editTextClienteNombre.text.toString()
+        params["apellidoCli"] = binding.editTextClienteApellido.text.toString()
+        params["direccionCli"] = binding.editTextClienteDireccion.text.toString()
+        params["contrasenia"] = binding.editTextClienteClave.text.toString()
+        params["imageUrl"] = binding.editTextImageUrl.text.toString()
+        val jsonObject = JSONObject(params as Map<*, *>?)
+
+        // Volley post request with parameters
+        val request = JsonObjectRequest(
+            Request.Method.POST, url, jsonObject,
+            { response ->
+                // Process the json
+                Toast.makeText(applicationContext, "Cliente Insertado con éxito", Toast.LENGTH_LONG).show()
+                guardarImagenLocal(params["imageUrl"]!!)
+                val intent = Intent(this, LoginActivity::class.java)
+                startActivity(intent)
+            }, { error ->
+                // Error in request
+                Toast.makeText(applicationContext, "No se pudo insertar", Toast.LENGTH_LONG).show()
+            })
+
+        request.retryPolicy = DefaultRetryPolicy(
+            DefaultRetryPolicy.DEFAULT_TIMEOUT_MS,
+            // 0 means no retry
+            0, // DefaultRetryPolicy.DEFAULT_MAX_RETRIES = 2
+            1f // DefaultRetryPolicy.DEFAULT_BACKOFF_MULT
+        )
+
+        val queue = Volley.newRequestQueue(this)
+        queue.add(request)
+    }
+
+    private fun guardarImagenLocal(imageUrl: String) {
+        val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("userImageUrl", imageUrl)
+        editor.apply()
     }
 
     private fun validarCampos(binding: ActivityRegistroClienteBinding): Boolean {
-
-        if (binding.editTextClienteCedula.text.toString().equals("")) return  false
-        if (binding.editTextClienteApellido.text.toString().equals("")) return  false
-        if (binding.editTextClienteDireccion.text.toString().equals("")) return  false
-        if (binding.editTextClienteNombre.text.toString().equals("")) return  false
-        if (binding.editTextClienteClave.text.toString().equals("")) return  false
-
+        if (binding.editTextClienteCedula.text.toString().isEmpty()) return false
+        if (binding.editTextClienteApellido.text.toString().isEmpty()) return false
+        if (binding.editTextClienteDireccion.text.toString().isEmpty()) return false
+        if (binding.editTextClienteNombre.text.toString().isEmpty()) return false
+        if (binding.editTextClienteClave.text.toString().isEmpty()) return false
         return true
     }
 
-
     private fun validarCedula(cedula: String): Boolean {
-
+        // Validar cédula
         var cedulaCorrecta = false
-
         try {
-            if (cedula.length === 10) // ConstantesApp.LongitudCedula
-            {
+            if (cedula.length == 10) {
                 val tercerDigito = cedula.substring(2, 3).toInt()
                 if (tercerDigito < 6) {
                     val coefValCedula = intArrayOf(2, 1, 2, 1, 2, 1, 2, 1, 2)
@@ -147,7 +154,6 @@ class RegistroClienteActivity : AppCompatActivity() {
         } catch (nfe: NumberFormatException) {
             cedulaCorrecta = false
         } catch (err: Exception) {
-           // println("Una excepcion ocurrio en el proceso de validadcion")
             cedulaCorrecta = false
         }
         if (!cedulaCorrecta) {
@@ -156,35 +162,27 @@ class RegistroClienteActivity : AppCompatActivity() {
         return cedulaCorrecta
     }
 
-    private fun validarClave( clave: String): Boolean {
-
+    private fun validarClave(clave: String): Boolean {
         var mayuscula = false
-        var numero= false;
-        var minuscula = false;
-        var caracter = false;
+        var numero = false
+        var minuscula = false
+        var caracter = false
+        var bandera = false
 
-        var bandera=false
-
-
-        if (clave.length>=4){
-            for (item in clave)
-            {
-                Log.i("clave",item.toString())
-                if (Character.isDigit(item))   numero = true
+        if (clave.length >= 4) {
+            for (item in clave) {
+                if (Character.isDigit(item)) numero = true
                 if (Character.isUpperCase(item)) mayuscula = true
                 if (Character.isLowerCase(item)) minuscula = true
-                if(!Character.isLetterOrDigit(item)) caracter = true
+                if (!Character.isLetterOrDigit(item)) caracter = true
             }
-
-        }else{
-            bandera=false
+        } else {
+            bandera = false
         }
 
-        if (numero && mayuscula && minuscula && caracter)  bandera = true
+        if (numero && mayuscula && minuscula && caracter) bandera = true
 
         return bandera
     }
-
-
 
 }

@@ -18,7 +18,6 @@
         android:ems="10"
         android:hint="@string/txt_cedula"
         android:inputType="number"
-
         android:maxLength="10"
         android:minHeight="48dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -92,6 +91,42 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextClienteDireccion" />
 
+    <EditText
+        android:id="@+id/editTextImageUrl"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="32dp"
+        android:hint="URL de la imagen"
+        android:inputType="text"
+        android:minHeight="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextClienteClave" />
+
+    <Button
+        android:id="@+id/buttonLoadImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Cargar Imagen"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextImageUrl" />
+
+    <ImageView
+        android:id="@+id/imageViewUser"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center"
+        android:contentDescription="Imagen del usuario"
+        android:scaleType="centerCrop"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonLoadImage" />
+
     <Button
         android:id="@+id/buttonCliienteRegistrar"
         android:layout_width="0dp"
@@ -100,11 +135,11 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="32dp"
         android:background="@drawable/button_redondo"
-        android:text="Registrase"
+        android:text="Registrarse"
         android:textColor="#FFFFFF"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextClienteClave" />
+        app:layout_constraintTop_toBottomOf="@+id/imageViewUser" />
 
     <ImageView
         android:id="@+id/imageView4"

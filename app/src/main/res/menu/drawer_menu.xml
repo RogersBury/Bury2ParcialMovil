@@ -9,6 +9,10 @@
             android:id="@+id/nav_third_fragment"
             android:icon="@drawable/ic_baseline_content_paste_search_24"
             android:title="Facturas" />
+        <item
+            android:id="@+id/reporte"
+            android:icon="@drawable/ic_baseline_edit_24"
+            android:title="Reportes" />
 
         <item android:title="Cuenta">
             <menu>
@@ -26,5 +30,7 @@
             android:id="@+id/cerrarSesion"
             android:icon="@drawable/ic_baseline_login_24"
             android:title="Cerrar Sesion" />
+
+
     </group>
 </menu>
